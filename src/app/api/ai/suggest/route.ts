@@ -3,7 +3,10 @@ import OpenAI from 'openai'
 import { searchKnowledge } from '@/lib/rag'
 import { supabaseAdmin } from '@/lib/supabase'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: 'https://api.deepseek.com/v1',
+})
 
 export async function POST(req: NextRequest) {
   const { todo_id, user_id } = await req.json()
@@ -39,7 +42,7 @@ ${context ? `\n相关知识库内容：\n${context}` : ''}`,
   ]
 
   const res = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'deepseek-chat',
     messages,
     max_tokens: 500,
   })

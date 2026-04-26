@@ -1,14 +1,20 @@
 import OpenAI from 'openai'
 import { supabaseAdmin } from './supabase'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+// DeepSeek 不支持 embeddings，用简单的哈希向量作为降级方案
+const deepseek = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: 'https://api.deepseek.com/v1',
+})
 
 export async function embedText(text: string): Promise<number[]> {
-  const res = await openai.embeddings.create({
-    model: 'text-embedding-3-small',
-    input: text,
-  })
-  return res.data[0].embedding
+  // DeepSeek 暂不支持 embedding API，生成伪向量（1536维）
+  const vec = new Array(1536).fill(0)
+  for (let i = 0; i < text.length; i++) {
+    vec[i % 1536] += text.charCodeAt(i) / 1000
+  }
+  const norm = Math.sqrt(vec.reduce((s, v) => s + v * v, 0)) || 1
+  return vec.map(v => v / norm)
 }
 
 export async function searchKnowledge(query: string, sourceId: string, topK = 5) {
