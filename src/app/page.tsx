@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { Todo, Category } from '@/lib/types'
 import { TodoItem } from '@/components/todo/TodoItem'
