@@ -1,6 +1,6 @@
 {
-  "name": "ai-todo",
-  "version": "0.2.0",
+  "name": "aitodo",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

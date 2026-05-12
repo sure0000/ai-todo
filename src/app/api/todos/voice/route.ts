@@ -1,42 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { callLLMJSON } from '@/agents/llm'
+import { supabaseAdmin } from '@/lib/supabase'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.deepseek.com/v1',
-})
-
+// POST /api/todos/voice — 语音输入，解析并创建目标
 export async function POST(req: NextRequest) {
   const { text } = await req.json()
 
   if (!text) return NextResponse.json({ error: 'No text provided' }, { status: 400 })
 
-  // DeepSeek 解析结构化任务（不支持 Whisper，语音转文字在前端处理）
-  const parsed = await openai.chat.completions.create({
-    model: 'deepseek-chat',
-    messages: [
+  // DeepSeek 解析语音输入为结构化目标
+  const parsed = await callLLMJSON<{ title: string; description: string | null }>(
+    [
       {
         role: 'system',
-        content: `从用户输入中提取待办事项信息，返回 JSON 格式：
+        content: `从用户语音输入中提取目标信息，返回 JSON：
 {
-  "title": "任务标题",
-  "due_date": "ISO日期字符串或null",
-  "priority": "high|medium|low",
-  "category_hint": "可能的分类名称或null",
+  "title": "目标标题（简洁）",
   "description": "补充说明或null"
 }
 只返回 JSON，不要其他内容。`,
       },
       { role: 'user', content: text },
     ],
-  })
+  )
 
-  try {
-    const content = parsed.choices[0].message.content!
-    const json = JSON.parse(content.replace(/```json\n?|\n?```/g, '').trim())
-    return NextResponse.json({ transcription: text, parsed: json })
-  } catch {
-    return NextResponse.json({ transcription: text, parsed: { title: text, priority: 'medium', due_date: null, category_hint: null, description: null } })
-  }
+  // 自动创建目标
+  const { data: goal } = await supabaseAdmin
+    .from('goals')
+    .insert({
+      user_id: 'demo-user',
+      title: parsed.title,
+      description: parsed.description,
+      status: 'active',
+    })
+    .select()
+    .single()
+
+  return NextResponse.json({ transcription: text, goal })
 }
-

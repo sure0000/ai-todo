@@ -1,5 +1,32 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
+# AItodo — Personal AI Execution OS
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
-<!-- END:nextjs-agent-rules -->
+## Architecture Overview
+
+```
+Goal → Planner Agent → Task Tree → Research Agent → Knowledge Base → Writer Agent → Output
+                                                                          ↓
+                                                                   Memory System
+                                                                          ↓
+                                                                   Chat / Follow-up
+```
+
+## Key Principles
+
+- **Agent System**: 5 agents (Planner, Research, Writer, Knowledge, Memory) — modular, pluggable
+- **Unified LLM Router**: All calls via `src/agents/llm.ts` — swappable between DeepSeek/OpenAI/Claude
+- **Configurable Prompts**: All agent prompts in `src/prompts/index.ts`
+- **Phase 1 Scope**: Goal → Task → AI Research → Knowledge Base
+
+## File Structure
+
+```
+src/agents/     — Agent implementations
+src/prompts/    — Structured prompt templates
+src/lib/        — Shared utilities (Supabase, RAG, types)
+src/app/api/    — REST API routes
+src/components/ — React UI components
+```
+
+## Tech Stack
+
+Next.js 16 + Supabase (pgvector) + DeepSeek + Tailwind CSS v4

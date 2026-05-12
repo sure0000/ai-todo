@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'AI 待办助手',
-  description: '智能待办事项，连接你的知识库',
+  title: 'AItodo',
+  description: 'Personal AI Execution OS — 知识驱动的 AI 执行系统',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

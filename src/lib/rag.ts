@@ -1,14 +1,14 @@
-import OpenAI from 'openai'
+// ============================================================
+// RAG 工具 — 向量化、文本分块、知识检索
+// ============================================================
+
 import { supabaseAdmin } from './supabase'
 
-// DeepSeek 不支持 embeddings，用简单的哈希向量作为降级方案
-const deepseek = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://api.deepseek.com/v1',
-})
-
+/**
+ * 简单的伪向量化
+ * DeepSeek 不支持 embedding API，生成 1536 维伪向量
+ */
 export async function embedText(text: string): Promise<number[]> {
-  // DeepSeek 暂不支持 embedding API，生成伪向量（1536维）
   const vec = new Array(1536).fill(0)
   for (let i = 0; i < text.length; i++) {
     vec[i % 1536] += text.charCodeAt(i) / 1000
@@ -17,17 +17,9 @@ export async function embedText(text: string): Promise<number[]> {
   return vec.map(v => v / norm)
 }
 
-export async function searchKnowledge(query: string, sourceId: string, topK = 5) {
-  const embedding = await embedText(query)
-  const { data, error } = await supabaseAdmin.rpc('match_knowledge_chunks', {
-    query_embedding: embedding,
-    source_id: sourceId,
-    match_count: topK,
-  })
-  if (error) throw error
-  return data as Array<{ content: string; metadata: Record<string, unknown>; similarity: number }>
-}
-
+/**
+ * 文本分块
+ */
 export async function chunkText(text: string, chunkSize = 500): Promise<string[]> {
   const words = text.split(/\s+/)
   const chunks: string[] = []
@@ -35,4 +27,34 @@ export async function chunkText(text: string, chunkSize = 500): Promise<string[]
     chunks.push(words.slice(i, i + chunkSize).join(' '))
   }
   return chunks
+}
+
+/**
+ * 检索相关知识库
+ */
+export async function searchKnowledge(
+  query: string,
+  options?: {
+    userId?: string
+    tags?: string[]
+    topK?: number
+  },
+) {
+  const embedding = await embedText(query)
+  const { data, error } = await supabaseAdmin.rpc('match_knowledge', {
+    query_embedding: embedding,
+    match_count: options?.topK ?? 5,
+    filter_user_id: options?.userId ?? null,
+    filter_tags: options?.tags ?? null,
+  })
+  if (error) throw error
+  return data as Array<{
+    id: string
+    content: string
+    title: string
+    source_type: string
+    source_url: string
+    tags: string[]
+    similarity: number
+  }>
 }
